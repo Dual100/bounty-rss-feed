@@ -1,0 +1,14 @@
+{
+  "name": "bounty-rss-feed",
+  "version": "1.0.0",
+  "description": "RSS/Atom feed generator for owockibot bounties",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "node --watch index.js"
+  },
+  "dependencies": {
+    "feed": "^4.2.2"
+  }
+}
