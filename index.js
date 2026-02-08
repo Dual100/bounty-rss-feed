@@ -1,7 +1,7 @@
 import { Feed } from 'feed';
 import http from 'http';
 
-const BOUNTY_API = 'http://bounty.owockibot.xyz/bounties';
+const BOUNTY_API = 'https://bounty.owockibot.xyz/bounties';
 const PORT = process.env.PORT || 3000;
 
 // Fetch bounties from API
@@ -9,6 +9,27 @@ async function fetchBounties() {
   const res = await fetch(BOUNTY_API);
   if (!res.ok) throw new Error('API error: ' + res.status);
   return res.json();
+}
+
+// Parse date safely - handles Unix timestamps (ms) and ISO strings
+function parseDate(value) {
+  if (!value) return new Date();
+  
+  // If it's a number (Unix timestamp in ms)
+  if (typeof value === 'number') {
+    return new Date(value);
+  }
+  
+  // If it's a string, try to parse it
+  if (typeof value === 'string') {
+    const parsed = new Date(value);
+    if (!isNaN(parsed.getTime())) {
+      return parsed;
+    }
+  }
+  
+  // Fallback to current date
+  return new Date();
 }
 
 // Generate RSS/Atom feed
@@ -26,9 +47,15 @@ async function generateFeed(format, tagFilter) {
     );
   }
 
-  // Sort by newest first
-  openBounties.sort((a, b) => b.createdAt - a.createdAt);
+  // Sort by newest first (handle both number and string dates)
+  openBounties.sort((a, b) => {
+    const dateA = parseDate(a.createdAt).getTime();
+    const dateB = parseDate(b.createdAt).getTime();
+    return dateB - dateA;
+  });
 
+  const baseUrl = process.env.BASE_URL || 'https://bounty-rss.example.com';
+  
   const feed = new Feed({
     title: 'owockibot Bounty Board',
     description: 'Open bounties for AI agents - earn USDC on Base',
@@ -41,9 +68,9 @@ async function generateFeed(format, tagFilter) {
     updated: new Date(),
     generator: 'Bounty RSS Feed Generator',
     feedLinks: {
-      rss: 'https://bounty-rss.example.com/rss',
-      atom: 'https://bounty-rss.example.com/atom',
-      json: 'https://bounty-rss.example.com/json'
+      rss: baseUrl + '/rss',
+      atom: baseUrl + '/atom',
+      json: baseUrl + '/json'
     },
     author: {
       name: 'owockibot',
@@ -53,8 +80,9 @@ async function generateFeed(format, tagFilter) {
 
   for (const bounty of openBounties.slice(0, 50)) {
     const tags = bounty.tags || [];
-    const deadlineDate = bounty.deadline ? new Date(bounty.deadline) : null;
+    const deadlineDate = bounty.deadline ? parseDate(bounty.deadline) : null;
     const deadlineStr = deadlineDate ? deadlineDate.toISOString() : '';
+    const createdDate = parseDate(bounty.createdAt);
 
     let content = '<h2>' + bounty.title + '</h2>';
     content += '<p><strong>Reward:</strong> ' + bounty.rewardFormatted + '</p>';
@@ -82,7 +110,7 @@ async function generateFeed(format, tagFilter) {
       link: 'https://bounty.owockibot.xyz/bounty/' + bounty.id,
       description: bounty.description || 'No description',
       content: content,
-      date: new Date(bounty.createdAt),
+      date: createdDate,
       category: tags.map(t => ({ name: t }))
     });
   }

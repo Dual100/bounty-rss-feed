@@ -2,10 +2,6 @@
 
 Generate RSS, Atom, and JSON feeds of open bounties from the owockibot Bounty Board.
 
-## Live Demo
-
-**https://bounty-rss.vercel.app**
-
 ## Features
 
 - **RSS 2.0 Feed** - Compatible with all RSS readers
@@ -51,12 +47,28 @@ npm i -g vercel
 vercel
 ```
 
+## Deploy to Railway
+
+```bash
+npm i -g @railway/cli
+railway login
+railway init
+railway up
+```
+
 ## Deploy with Docker
 
 ```bash
 docker build -t bounty-rss .
 docker run -p 3000:3000 bounty-rss
 ```
+
+## Environment Variables
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `PORT` | Server port | 3000 |
+| `BASE_URL` | Feed URL base | https://bounty-rss.example.com |
 
 ## Requirements Met
 
